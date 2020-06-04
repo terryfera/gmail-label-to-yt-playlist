@@ -1,0 +1,5 @@
+/venv
+.vscode
+credentials.json
+api.key
+apikey.py
