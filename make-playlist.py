@@ -3,20 +3,35 @@ import pickle
 import os.path
 import json
 import re
+import logging
 import googleapiclient.discovery
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
 
+# Create and configure logger
+logLocation = "./"
+logfile = "yt-playlist.log"
+
+logging.basicConfig(
+    filename=logLocation + logfile,
+    format="%(asctime)s - %(levelno)s-%(levelname)s - %(message)s",
+    filemode="a",
+    datefmt="%Y-%m-%d %I:%M:%S %p",
+)
+
+# Creating a logging object
+logger = logging.getLogger(__name__)
+
+# Setting the threshold of logger to DEBUG
+logger.setLevel(logging.DEBUG)
+
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.modify",
     "https://www.googleapis.com/auth/youtube.force-ssl",
 ]
-
-api_service_name = "youtube"
-api_version = "v3"
 
 
 def main():
@@ -41,8 +56,8 @@ def main():
         with open("token.pickle", "wb") as token:
             pickle.dump(creds, token)
 
-    service = build("gmail", "v1", credentials=creds)
-    youtube = build(api_service_name, api_version, credentials=creds)
+    service = build("gmail", "v1", credentials=creds, cache_discovery=False)
+    youtube = build("youtube", "v3", credentials=creds, cache_discovery=False)
 
     unread_msgs = (
         service.users()
@@ -52,7 +67,7 @@ def main():
     )
 
     if unread_msgs["resultSizeEstimate"] == 0:
-        print("No messages found.")
+        logger.info("No new messages found.")
     else:
         for message in unread_msgs["messages"]:
 
@@ -70,9 +85,9 @@ def main():
             try:
                 resourceId = vid_link.group(1)
             except Exception as e:
-                print(e)
+                logger.error(f"Error during execution: {e}")
 
-            print(f"Trying to add video with ResourceID: {resourceId}")
+            logger.info(f"Trying to add video with ResourceID: {resourceId}")
 
             try:
                 request = youtube.playlistItems().insert(
@@ -89,11 +104,11 @@ def main():
                 )
                 response = request.execute()
 
-                print(
+                logger.info(
                     f"Video: {response['snippet']['title']} added to playlist. Video ID: {resourceId}"
                 )
             except Exception as e:
-                print(e)
+                logger.error(f"Error during execution: {e}")
 
             # Mark Message as read
             removeLabels = {"removeLabelIds": ["UNREAD"]}
@@ -102,10 +117,10 @@ def main():
                     userId="me", id=messageId, body=removeLabels
                 ).execute()
 
-                print(f"Email marked as read for Video ID: {resourceId}")
+                logger.info(f"Email marked as read for Video ID: {resourceId}")
 
             except Exception as e:
-                print(e)
+                logger.error(f"Error during execution: {e}")
 
 
 if __name__ == "__main__":
