@@ -103,6 +103,17 @@ def main():
                     },
                 )
                 response = request.execute()
+                # Mark Message as read
+                removeLabels = {"removeLabelIds": ["UNREAD"]}
+                try:
+                    service.users().messages().modify(
+                        userId="me", id=messageId, body=removeLabels
+                    ).execute()
+
+                    logger.info(f"Email marked as read for Video ID: {resourceId}")
+
+                except Exception as e:
+                    logger.error(f"Error during execution: {e}")
 
                 logger.info(
                     f"Video: {response['snippet']['title']} added to playlist. Video ID: {resourceId}"
@@ -110,17 +121,7 @@ def main():
             except Exception as e:
                 logger.error(f"Error during execution: {e}")
 
-            # Mark Message as read
-            removeLabels = {"removeLabelIds": ["UNREAD"]}
-            try:
-                service.users().messages().modify(
-                    userId="me", id=messageId, body=removeLabels
-                ).execute()
-
-                logger.info(f"Email marked as read for Video ID: {resourceId}")
-
-            except Exception as e:
-                logger.error(f"Error during execution: {e}")
+            
 
 
 if __name__ == "__main__":
