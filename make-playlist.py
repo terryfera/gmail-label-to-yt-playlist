@@ -9,6 +9,7 @@ import googleapiclient.discovery
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from datetime import datetime
 
 
 def parse_msg(msg):
@@ -20,7 +21,7 @@ def parse_msg(msg):
 
 def link_search(msgBody):
     vid_link = re.search(regex, str(msgBody))
-    logger.debug(f"Regex search result: {str(vid_link)}")
+    #logger.debug(f"Regex search result: {str(vid_link)}")
     return vid_link.group(6)
 
 
@@ -34,7 +35,7 @@ logfile = "yt-playlist.log"
 
 logging.basicConfig(
     filename=logLocation + logfile,
-    format="%(asctime)s - %(levelno)s-%(levelname)s - %(message)s",
+    format="%(asctime)s - %(levelname)s - %(message)s",
     filemode="a",
     datefmt="%Y-%m-%d %I:%M:%S %p",
 )
@@ -43,7 +44,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Setting the threshold of logger to DEBUG
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = [
@@ -53,9 +54,6 @@ SCOPES = [
 
 
 def main():
-    """Shows basic usage of the Gmail API.
-    Lists the user's Gmail labels.
-    """
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -102,7 +100,7 @@ def main():
 
             msgBody = parse_msg(full_message)
 
-            logger.debug(f"Decoded message body: {msgBody}")
+            #logger.debug(f"Decoded message body: {msgBody}")
 
             resourceId = ""
 
@@ -149,4 +147,5 @@ def main():
 
 
 if __name__ == "__main__":
+    logger.info(f"Running script at {str(datetime.now())}")
     main()
