@@ -13,9 +13,14 @@ from datetime import datetime
 
 
 def parse_msg(msg):
-    if msg['payload']['parts'][0]['body']['data']:
+    if 'parts' in msg['payload']:
         msg_decode = base64.urlsafe_b64decode(
             msg['payload']['parts'][0]['body']['data']).decode("utf-8")
+    elif 'body' in msg['payload']:
+        msg_decode = base64.urlsafe_b64decode(
+            msg['payload']['body']['data']).decode("utf-8")
+    else:
+        return Exception
     return msg_decode
 
 
@@ -96,7 +101,7 @@ def main():
                 .execute()
             )
 
-            # logger.debug(f"Returned details from gmail: {full_message}")
+            #logger.debug(f"Returned details from gmail: {full_message}")
 
             msgBody = parse_msg(full_message)
 
