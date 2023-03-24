@@ -24,10 +24,45 @@ def parse_msg(msg):
     return msg_decode
 
 
+def check_vid_link_blocklist(vid_link):
+    vid_link_blocklist = ["live", "KindaFunnyGames", "channel"]
+    if str(vid_link) in vid_link_blocklist:
+        return True
+    else:
+        return False
+
+
+def check_vid_link_length(vid_link):
+    if len(str(vid_link)) == 0:
+        return False
+    if len(str(vid_link)) == 11:
+        return True
+    else:
+        return False
+
+
 def link_search(msgBody):
     vid_link = re.search(regex, str(msgBody))
-    #logger.debug(f"Regex search result: {str(vid_link)}")
-    return vid_link.group(6)
+    if "channel" in str(vid_link):
+        return False
+    else:
+        #logger.debug(f"Regex search result: {str(vid_link)}")
+        if check_vid_link_blocklist(vid_link.group(6)) is True or check_vid_link_blocklist(vid_link.group(7)) is True:
+            logger.info(
+                f"Video link search for group 6 or 7 was on the blocklist: Group6: {vid_link.group(6)} | Group7: {vid_link.group(7)}")
+
+        elif check_vid_link_length(vid_link.group(6)) is True:
+            logger.info(
+                f"Video link search result used group 6, resourceID length is 10 {vid_link.group(6)}")
+            return vid_link.group(6)
+        elif check_vid_link_length(vid_link.group(7)) is True:
+            logger.info(
+                f"Video link search result used group 7, resourceID length is 10: {vid_link.group(7)}")
+            return vid_link.group(7)
+        else:
+            logger.info(
+                f"No resourceID validation passed, full vid_link search is: {vid_link}")
+            return False
 
 
 # Regex string for youtube link search
@@ -111,7 +146,13 @@ def main():
 
             try:
                 resourceId = link_search(msgBody)
-                logger.info(f"Found ResourceID: {resourceId}")
+                if resourceId is False:
+                    logger.info(
+                        f"No resourceID found during search, marking email read")
+                    resourceId = ""
+                    removeLabels = {"removeLabelIds": ["UNREAD"]}
+                else:
+                    logger.info(f"Found ResourceID: {resourceId}")
             except Exception as e:
                 logger.error(f"Error while searching for link: {e}")
 
@@ -136,12 +177,13 @@ def main():
                     logger.error(f"Error while inserting playlist item: {e}")
 
                 try:
-                    service.users().messages().modify(
-                        userId="me", id=messageId, body=removeLabels
-                    ).execute()
+                    if removeLabels:
+                        service.users().messages().modify(
+                            userId="me", id=messageId, body=removeLabels
+                        ).execute()
 
-                    logger.info(
-                        f"Email marked as read for Video ID: {resourceId}")
+                        logger.info(
+                            f"Email marked as read for Video ID: {resourceId}")
 
                 except Exception as e:
                     logger.error(f"Error while marking email as read: {e}")
@@ -149,6 +191,9 @@ def main():
                 logger.info(
                     f"Video: {response['snippet']['title']} added to playlist. Video ID: {resourceId}"
                 )
+    logger.info(
+        f"Script run complete"
+    )
 
 
 if __name__ == "__main__":
