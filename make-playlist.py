@@ -50,7 +50,24 @@ def link_search(msgBody):
         if check_vid_link_blocklist(vid_link.group(6)) is True or check_vid_link_blocklist(vid_link.group(7)) is True:
             logger.info(
                 f"Video link search for group 6 or 7 was on the blocklist: Group6: {vid_link.group(6)} | Group7: {vid_link.group(7)}")
-
+            if check_vid_link_blocklist(vid_link.group(6)) is True:
+                logger.info(
+                    f"Blocklist item found in group 6, trying group 7: Group 6 {vid_link.group(6)}")
+                if check_vid_link_blocklist(vid_link.group(7)) is False:
+                    logger.info(
+                        f"Video link found in group 7: {vid_link.group(7)}")
+                    if str(vid_link.group(7)).startswith("/"):
+                        return str(vid_link.group(7)).lstrip("/")
+                    else:
+                        return vid_link.group(7)
+                else:
+                    logger.info(
+                        f"No video link found in group 7: {vid_link.group(7)}")
+                    return False
+            else:
+                logger.info(
+                    f"No video link found in group 6 or 7")
+                return False
         elif check_vid_link_length(vid_link.group(6)) is True:
             logger.info(
                 f"Video link search result used group 6, resourceID length is 10 {vid_link.group(6)}")
@@ -171,6 +188,11 @@ def main():
                         },
                     )
                     response = request.execute()
+
+                    # Add log:
+                    logger.info(
+                        f"Video: {response['snippet']['title']} added to playlist. Video ID: {resourceId}"
+                    )
                     # Mark Message as read
                     removeLabels = {"removeLabelIds": ["UNREAD"]}
                 except Exception as e:
@@ -188,9 +210,6 @@ def main():
                 except Exception as e:
                     logger.error(f"Error while marking email as read: {e}")
 
-                logger.info(
-                    f"Video: {response['snippet']['title']} added to playlist. Video ID: {resourceId}"
-                )
     logger.info(
         f"Script run complete"
     )
